@@ -45,3 +45,31 @@ tar -czvf /tmp/${myname}-httpd-logs-${timestamp}.tar /var/log/apache2/*.log
 
 #Copy tar file to S3
 aws s3 cp /tmp/${myname}-httpd-logs-${timestamp}.tar s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar
+
+#Create Inventoory file
+logfile=`ls -ltrh /tmp/*$timestamp*`
+var1=`echo $logfile | cut -f5 -d' '`
+var2=`echo $logfile | cut -f9 -d' ' | cut -f3 -d'/'`
+var3=`echo $logfile | cut -f9 -d' ' | cut -f3 -d'/' | cut   -f2 -d'-'`
+var4=`echo $logfile | cut -f9 -d' ' | cut -f3 -d'/' | cut   -f3 -d'-'`
+var5=`echo $logfile | cut -f9 -d' ' | cut -f3 -d'/' | cut -f2 -d'.'`
+if test -f "$FILE"
+then
+    echo -e "$var3-$var4\t$timestamp\t$var5\t$var1" >> $FILE
+else
+    echo -e "Log Type\tDate Created\tType\tSize" > $FILE
+    echo -e "$var3-$var4\t$timestamp\t$var5\t$var1" >> $FILE
+
+fi
+
+#Create cronjob if it does not exists
+CRON='/etc/cron.d/automation'
+if test -f "$CRON"
+then
+    echo "cron exists"
+else
+    touch $CRON
+    echo "SHELL=/bin/bash" > $CRON
+    echo "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin" >> $CRON
+    echo "0 17 * * * root /root/Automation_Project/automation.sh" >> $CRON
+fi
